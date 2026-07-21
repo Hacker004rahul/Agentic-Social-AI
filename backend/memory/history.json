@@ -1,0 +1,48 @@
+[
+  {
+    "id": 1781715791046,
+    "brand_name": "Puma",
+    "timestamp": "2026-06-17T22:33:11",
+    "brand": {
+      "brand_name": "Puma",
+      "target_audience": "Gen z",
+      "platforms": [
+        "Instagram",
+        "LinkedIn"
+      ],
+      "competitors": [
+        "Adidas",
+        "Nike"
+      ],
+      "tone": "casual",
+      "offer": "",
+      "campaign_goal": "engagement",
+      "industry": "fashion",
+      "constraints": "no sentiment hurt to people"
+    },
+    "summary": "Puma is targeting Gen z with a engagement campaign on Instagram, LinkedIn. Content direction: Build trust through transparency and behind-the-scenes content. Best platform this run: Instagram with total reach of 9,165."
+  },
+  {
+    "id": 1781718771391,
+    "brand_name": "puma",
+    "timestamp": "2026-06-17T23:22:51",
+    "brand": {
+      "brand_name": "puma",
+      "target_audience": "Genz",
+      "platforms": [
+        "Instagram"
+      ],
+      "competitors": [
+        "nike",
+        "adidas",
+        "fila"
+      ],
+      "tone": "casual",
+      "offer": "",
+      "campaign_goal": "engagement",
+      "industry": "fashion",
+      "constraints": "no hateful comments to any country or community"
+    },
+    "summary": "puma targeting Genz \u2014 engagement campaign on Instagram. 1 posts published. Best platform: Instagram (reach: 5,680). Inbox: 9 messages. Evergreen pool: 1 posts."
+  }
+]
