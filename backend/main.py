@@ -1,3 +1,13 @@
+import sys
+import io
+
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import connect_db, close_db
@@ -21,8 +31,11 @@ app.include_router(oauth.router)
 async def startup():
     try:
         await connect_db()
+        import asyncio
+        from services.background_publisher import start_background_publisher
+        asyncio.create_task(start_background_publisher())
     except Exception as exc:
-        print(f"⚠️ DB warning: {exc}")
+        print(f"[!] DB warning: {exc}")
 
 @app.on_event("shutdown")
 async def shutdown():

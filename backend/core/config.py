@@ -152,11 +152,11 @@ async def connect_db():
     try:
         db_instance.client = AsyncIOMotorClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000)
         await db_instance.client.admin.command("ping")
-        print(f"✅ MongoDB connected — {settings.DB_NAME}")
+        print(f"[+] MongoDB connected: {settings.DB_NAME}")
     except Exception as exc:
         db_instance.mongo_failed = True
         db_instance.local_db = LocalDatabase()
-        print(f"⚠️ MongoDB unavailable, using local JSON fallback: {exc}")
+        print(f"[!] MongoDB unavailable, using local JSON fallback: {exc}")
 
 async def close_db():
     if db_instance.client:

@@ -10,6 +10,7 @@ Flow:
   6. Token saved encrypted to social_credentials
   7. Backend closes popup with postMessage to frontend
 """
+import os
 import base64
 import hashlib
 import hmac
@@ -19,7 +20,7 @@ import urllib.parse
 from datetime import datetime
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from core.config import get_db, settings
@@ -74,17 +75,83 @@ def _parse_state(state: str) -> dict:
         raise HTTPException(400, "Invalid OAuth state")
 
 
+def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLResponse:
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Connect {platform} — Agentic Social AI</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; padding: 24px; display: grid; place-items: center; min-height: 80vh; margin: 0; }}
+        .card {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; max-width: 480px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }}
+        .badge {{ background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; display: inline-block; margin-bottom: 14px; letter-spacing: 0.05em; text-transform: uppercase; }}
+        h2 {{ color: #f8fafc; margin: 0 0 8px 0; font-size: 1.35rem; }}
+        p {{ font-size: 0.88rem; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0; }}
+        code {{ background: #0f172a; color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-family: monospace; font-size: 0.84rem; border: 1px solid #1e293b; }}
+        .btn {{ display: block; width: 100%; box-sizing: border-box; text-align: center; background: #2563eb; color: #ffffff; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer; transition: all 0.2s ease; margin-top: 14px; text-decoration: none; }}
+        .btn:hover {{ background: #1d4ed8; transform: translateY(-1px); }}
+        .note {{ margin-top: 20px; padding-top: 16px; border-top: 1px solid #1e293b; font-size: 0.78rem; color: #64748b; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="badge">Development Mode</div>
+        <h2>Connect {platform}</h2>
+        <p>Developer OAuth app key <code>{env_var}</code> is not configured in <code>backend/.env</code>.</p>
+        <p>You can connect using <strong>1-Click Demo Mode</strong> to test multi-agent campaign workflows and automatic scheduling right now.</p>
+        
+        <form method="POST" action="/social/oauth/demo-connect">
+            <input type="hidden" name="user_id" value="{user_id}" />
+            <input type="hidden" name="platform" value="{platform}" />
+            <button type="submit" class="btn">Connect {platform} with Demo Mode</button>
+        </form>
+
+        <div class="note">
+            For production live publishing, set <code>{env_var}</code> in <code>backend/.env</code> and restart the server.
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(html)
+
+
+@router.post("/demo-connect")
+async def demo_connect(user_id: str = Form(...), platform: str = Form(...)):
+    p = normalize_platform(platform)
+    await _save_creds(user_id, p, {
+        "access_token": f"demo-token-{p.lower()}",
+        "page_id": f"demo-page-{p.lower()}",
+        "person_urn": f"urn:li:person:demo-{p.lower()}",
+        "ig_user_id": f"demo-ig-{p.lower()}",
+        "channel_id": f"demo-ch-{p.lower()}",
+        "token_type": "demo",
+    })
+    if p in ("Facebook", "Instagram"):
+        await _save_creds(user_id, "Facebook", {
+            "access_token": "demo-token-facebook",
+            "page_id": "demo-page-facebook",
+            "token_type": "demo",
+        })
+        await _save_creds(user_id, "Instagram", {
+            "access_token": "demo-token-instagram",
+            "ig_user_id": "demo-ig-instagram",
+            "token_type": "demo",
+        })
+    return _close_popup("success", platform)
+
+
 # ══════════════════════════════════════════════════════════
 # LINKEDIN
 # ══════════════════════════════════════════════════════════
 @router.get("/linkedin/start")
 async def linkedin_start(user_id: str):
-    if not settings.LINKEDIN_CLIENT_ID:
-        raise HTTPException(400, "LINKEDIN_CLIENT_ID not set in .env")
+    client_id = os.getenv("LINKEDIN_CLIENT_ID") or settings.LINKEDIN_CLIENT_ID
+    if not client_id:
+        return _missing_creds_html("LinkedIn", "LINKEDIN_CLIENT_ID", user_id)
     state  = _make_state(user_id)
     params = urllib.parse.urlencode({
         "response_type": "code",
-        "client_id":     settings.LINKEDIN_CLIENT_ID,
+        "client_id":     client_id,
         "redirect_uri":  _redirect_uri("linkedin"),
         "state":         state,
         "scope":         "openid profile w_member_social",
@@ -139,11 +206,12 @@ async def linkedin_callback(code: str = None, state: str = None, error: str = No
 # ══════════════════════════════════════════════════════════
 @router.get("/facebook/start")
 async def facebook_start(user_id: str):
-    if not settings.META_CLIENT_ID:
-        raise HTTPException(400, "META_CLIENT_ID not set in .env")
+    client_id = os.getenv("META_CLIENT_ID") or settings.META_CLIENT_ID
+    if not client_id:
+        return _missing_creds_html("Facebook", "META_CLIENT_ID", user_id)
     state  = _make_state(user_id)
     params = urllib.parse.urlencode({
-        "client_id":     settings.META_CLIENT_ID,
+        "client_id":     client_id,
         "redirect_uri":  _redirect_uri("facebook"),
         "state":         state,
         "scope":         "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
@@ -227,8 +295,9 @@ async def facebook_callback(code: str = None, state: str = None, error: str = No
 # ══════════════════════════════════════════════════════════
 @router.get("/x/start")
 async def x_start(user_id: str):
-    if not settings.X_CLIENT_ID:
-        raise HTTPException(400, "X_CLIENT_ID not set in .env")
+    client_id = os.getenv("X_CLIENT_ID") or settings.X_CLIENT_ID
+    if not client_id:
+        return _missing_creds_html("Twitter", "X_CLIENT_ID", user_id)
     state         = _make_state(user_id)
     code_verifier = secrets.token_urlsafe(64)
     code_challenge = base64.urlsafe_b64encode(
@@ -245,7 +314,7 @@ async def x_start(user_id: str):
 
     params = urllib.parse.urlencode({
         "response_type":         "code",
-        "client_id":             settings.X_CLIENT_ID,
+        "client_id":             client_id,
         "redirect_uri":          _redirect_uri("x"),
         "scope":                 "tweet.read tweet.write users.read offline.access",
         "state":                 state,
@@ -299,11 +368,12 @@ async def x_callback(code: str = None, state: str = None, error: str = None):
 # ══════════════════════════════════════════════════════════
 @router.get("/youtube/start")
 async def youtube_start(user_id: str):
-    if not settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(400, "GOOGLE_CLIENT_ID not set in .env")
+    client_id = os.getenv("GOOGLE_CLIENT_ID") or settings.GOOGLE_CLIENT_ID
+    if not client_id:
+        return _missing_creds_html("YouTube", "GOOGLE_CLIENT_ID", user_id)
     state  = _make_state(user_id)
     params = urllib.parse.urlencode({
-        "client_id":             settings.GOOGLE_CLIENT_ID,
+        "client_id":             client_id,
         "redirect_uri":          _redirect_uri("youtube"),
         "response_type":         "code",
         "scope":                 "https://www.googleapis.com/auth/youtube.force-ssl",
@@ -347,7 +417,8 @@ async def youtube_callback(code: str = None, state: str = None, error: str = Non
             headers={"Authorization": f"Bearer {access_token}"},
         )
         ch_data    = ch_r.json()
-        channel_id = ch_data.get("items", [{}])[0].get("id", "")
+        items      = ch_data.get("items") or []
+        channel_id = items[0].get("id", "me") if items else "me"
 
     await _save_creds(user_id, "YouTube", {
         "access_token":  access_token,

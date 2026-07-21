@@ -269,6 +269,17 @@ export default function SchedulerPanel({ scheduler }) {
                         ? `Publish to ${p.platform}`
                         : `Connect ${p.platform} & Publish`}
                   </button>
+
+                  {p.platform === 'YouTube' && (
+                    <button className="btn btn-secondary btn-sm" style={{ background: '#ff0000', color: '#fff', border: 'none' }} onClick={() => {
+                      navigator.clipboard.writeText(p.content)
+                      window.open('https://studio.youtube.com', '_blank')
+                      showToast('📋 Content copied! Opening YouTube Studio Community Tab…')
+                    }}>
+                      Copy & Open YouTube Community
+                    </button>
+                  )}
+
                   <button className="btn btn-error btn-outline btn-sm" onClick={() => remove(p.id)} disabled={deleting === p.id}>
                     {deleting === p.id ? 'Deleting…' : 'Delete'}
                   </button>
