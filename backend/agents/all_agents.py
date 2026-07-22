@@ -118,8 +118,8 @@ class ContentAgent(BaseAgent):
             gemini_res = None
             if os.getenv("GEMINI_API_KEY"):
                 try:
-                    # Run the async generator synchronously in our pipeline
-                    gemini_res = asyncio.run(generate_caption_and_image(p, brand, goal, limit))
+                    # Run the generator synchronously in our pipeline
+                    gemini_res = generate_caption_and_image(p, brand, goal, limit)
                 except Exception as e:
                     print(f"[ContentAgent] Gemini run failed, falling back to templates: {e}")
 

@@ -3,7 +3,7 @@ import httpx
 import base64
 import asyncio
 
-async def generate_caption_and_image(platform: str, brand: dict, goal: str, limit: int) -> dict:
+def generate_caption_and_image(platform: str, brand: dict, goal: str, limit: int) -> dict:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return None
@@ -34,10 +34,10 @@ async def generate_caption_and_image(platform: str, brand: dict, goal: str, limi
     caption = ""
     image_base64 = None
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    with httpx.Client(timeout=30.0) as client:
         try:
             # 1. Generate text caption
-            r = await client.post(
+            r = client.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
                 json={
                     "contents": [{"parts": [{"text": caption_prompt}]}],
@@ -61,7 +61,7 @@ async def generate_caption_and_image(platform: str, brand: dict, goal: str, limi
         image_prompt = f"A professional, clean, premium commercial ad banner image for {brand_name}. {offer} for {audience}. High resolution, realistic product photo, studio lighting, modern minimalist design, {tone} aesthetic."
         try:
             # Try Imagen 3.0 generateImages REST API
-            img_r = await client.post(
+            img_r = client.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages?key={api_key}",
                 json={
                     "prompt": image_prompt,

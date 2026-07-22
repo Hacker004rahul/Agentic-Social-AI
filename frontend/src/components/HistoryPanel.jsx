@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../lib/api'
 import { Empty } from '../App'
 
 export default function HistoryPanel() {
@@ -7,7 +7,7 @@ export default function HistoryPanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    axios.get('/api/history').then(r => setHistory(r.data.reverse())).catch(() => {}).finally(() => setLoading(false))
+    api.get('/agents/history').then(r => setHistory(r.data)).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   return (

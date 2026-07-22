@@ -321,6 +321,8 @@ export default function App() {
   const handleRun = async (brand) => {
     setLoading(true); setError(''); setResult(null)
     try {
+      // First save the brand profile to the database so autopilot daemon sees it
+      await api.post('/brands', brand)
       const { data } = await api.post('/agents/run', brand)
       const payload = data?.result ? data.result : data
       setResult(payload)
@@ -367,15 +369,35 @@ export default function App() {
             </div>
           )}
           <button className="logout-btn" onClick={handleLogout} type="button">Logout</button>
-          <div className="theme-switcher" aria-label="Theme Switcher" title="Toggle Theme">
-            <input 
-              type="checkbox" 
-              className="toggle toggle-sm"
-              checked={theme === 'business'}
-              onChange={(e) => setTheme(e.target.checked ? 'business' : 'corporate')}
-              aria-label="Dark mode toggle"
-            />
-          </div>
+          <button 
+            type="button"
+            className={`theme-toggle-btn ${theme === 'business' ? 'dark' : 'light'}`}
+            onClick={() => setTheme(theme === 'business' ? 'corporate' : 'business')}
+            aria-label="Toggle Theme"
+            title={theme === 'business' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <div className="theme-toggle-track">
+              <div className="theme-toggle-thumb">
+                {theme === 'business' ? (
+                  <svg className="theme-icon moon-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.38 5.38 0 0 1-4.4 2.26 5.4 5.4 0 0 1-4.14-9.04A9 9 0 0 0 12 3z"/>
+                  </svg>
+                ) : (
+                  <svg className="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                  </svg>
+                )}
+              </div>
+            </div>
+          </button>
           <div className="agent-ticker">
             <span className="ticker-dot" />
             {AGENTS[tickIdx]}

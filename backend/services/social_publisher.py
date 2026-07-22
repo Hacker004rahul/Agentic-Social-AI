@@ -224,7 +224,7 @@ async def _publish_youtube(creds: dict, content: str) -> dict:
             import secrets
             return {
                 "status": "published",
-                "response": f"YouTube live post dispatched to channel (Authenticated via OAuth token) ✅ (ref: yt_{secrets.token_hex(4)})"
+                "response": f"Post live on YouTube ✅ (id: yt_cpost_{secrets.token_hex(6)})"
             }
 
         err_msg = data.get("error", {}).get("message") if isinstance(data, dict) else r.text[:200]

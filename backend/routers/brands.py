@@ -8,9 +8,10 @@ router = APIRouter(prefix="/brands", tags=["brands"])
 @router.post("")
 async def save_brand(body: dict, user=Depends(get_current_user)):
     db = get_db()
+    brand_name = body.get("brand_name")
     payload = {
         "user_id": user["id"],
-        "brand_name": body.get("brand_name"),
+        "brand_name": brand_name,
         "industry": body.get("industry"),
         "target_audience": body.get("target_audience"),
         "platforms": body.get("platforms", []),
@@ -20,10 +21,20 @@ async def save_brand(body: dict, user=Depends(get_current_user)):
         "autonomous": body.get("autonomous", False),
         "autonomous_interval_hours": body.get("autonomous_interval_hours", 24),
         "last_autonomous_run_at": body.get("last_autonomous_run_at"),
-        "created_at": datetime.utcnow(),
     }
-    result = await db["brands"].insert_one(payload)
-    payload["id"] = str(result.inserted_id)
+    existing = await db["brands"].find_one({"brand_name": brand_name, "user_id": user["id"]})
+    if existing:
+        # Don't overwrite created_at
+        await db["brands"].update_one(
+            {"brand_name": brand_name, "user_id": user["id"]},
+            {"$set": payload}
+        )
+        payload["id"] = str(existing.get("_id") or existing.get("id", ""))
+    else:
+        payload["created_at"] = datetime.utcnow()
+        result = await db["brands"].insert_one(payload)
+        payload["id"] = str(result.inserted_id)
+    payload.pop("_id", None)
     return payload
 
 @router.put("/{brand_name}")

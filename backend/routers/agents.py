@@ -33,7 +33,23 @@ async def websocket_endpoint(websocket: WebSocket, run_id: str):
 async def get_history(user=Depends(get_current_user)):
     db   = get_db()
     docs = await db["history"].find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
-    return docs
+    formatted = []
+    for doc in docs:
+        brand = doc.get("brand") or {}
+        result = doc.get("result") or {}
+        created_at = doc.get("created_at")
+        if isinstance(created_at, datetime):
+            created_at = created_at.isoformat()
+        elif not isinstance(created_at, str) and created_at:
+            created_at = str(created_at)
+            
+        formatted.append({
+            "brand_name": brand.get("brand_name", "Unknown Brand"),
+            "summary": result.get("executive_summary", "No summary available."),
+            "timestamp": created_at,
+            "run_id": doc.get("run_id"),
+        })
+    return formatted
 
 @router.get("/history/{run_id}")
 async def get_run(run_id: str, user=Depends(get_current_user)):
