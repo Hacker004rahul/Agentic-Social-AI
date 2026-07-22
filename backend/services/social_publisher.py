@@ -10,6 +10,7 @@ X          | X API v2 (OAuth 1.0a)             | api_key, api_secret, access_tok
 YouTube    | YouTube Data API v3               | access_token (OAuth2 refresh_token flow)
 """
 import httpx
+import base64
 from typing import Optional
 from core.platforms import normalize_platform
 
