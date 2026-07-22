@@ -31,18 +31,32 @@ async def start_background_publisher():
 
                 cred_doc = await db["social_credentials"].find_one(query)
                 if not cred_doc or not cred_doc.get("fields"):
-                    # try without user_id filter if missing
                     cred_doc = await db["social_credentials"].find_one({"platform": platform})
+
+                is_buffer_proxy = False
+                if (not cred_doc or not cred_doc.get("fields")) and platform != "Buffer":
+                    buffer_query = {"platform": "Buffer"}
+                    if user_id:
+                        buffer_query["user_id"] = user_id
+                    cred_doc = await db["social_credentials"].find_one(buffer_query)
                     if not cred_doc or not cred_doc.get("fields"):
-                        continue
+                        cred_doc = await db["social_credentials"].find_one({"platform": "Buffer"})
+                    if cred_doc and cred_doc.get("fields"):
+                        is_buffer_proxy = True
+
+                if not cred_doc or not cred_doc.get("fields"):
+                    continue
 
                 try:
                     creds = {k: _decrypt(v) for k, v in cred_doc["fields"].items()}
                 except Exception:
                     continue
 
-                print(f"[🤖 Agent Auto-Publisher] Auto-publishing queued post ID {post.get('id')} to {platform}...")
-                result = await publish_to_platform(platform, creds, post.get("content", ""))
+                target_pub_platform = "Buffer" if is_buffer_proxy else platform
+                print(f"[🤖 Agent Auto-Publisher] Auto-publishing queued post ID {post.get('id')} to {platform} (via Buffer Proxy: {is_buffer_proxy})...")
+                result = await publish_to_platform(target_pub_platform, creds, post.get("content", ""))
+                if is_buffer_proxy and result["status"] == "published":
+                    result["response"] = f"[Buffer Proxy] Routed via Buffer queue to publish to {platform} ✅ ({result.get('response')})"
                 published_at = datetime.utcnow().isoformat()
 
                 await db["scheduler"].update_one(

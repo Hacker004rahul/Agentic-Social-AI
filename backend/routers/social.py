@@ -102,15 +102,27 @@ async def real_publish(body: RealPublishRequest, user=Depends(get_current_user))
     doc  = await db["social_credentials"].find_one(
         {"user_id": user["id"], "platform": platform}
     )
+    is_buffer_proxy = False
     if not doc or not doc.get("fields"):
-        raise HTTPException(400, f"No saved credentials for {platform}. Connect it first in the Scheduler.")
+        if platform != "Buffer":
+            doc = await db["social_credentials"].find_one(
+                {"user_id": user["id"], "platform": "Buffer"}
+            )
+            if doc and doc.get("fields"):
+                is_buffer_proxy = True
+
+    if not doc or not doc.get("fields"):
+        raise HTTPException(400, f"No saved credentials for {platform}. Connect it first in the Scheduler (or connect Buffer to proxy it).")
 
     try:
         creds = {k: _decrypt(v) for k, v in doc["fields"].items()}
     except Exception:
         raise HTTPException(400, "Failed to decrypt credentials — please re-enter them.")
 
-    result       = await publish_to_platform(platform, creds, body.content)
+    target_pub_platform = "Buffer" if is_buffer_proxy else platform
+    result       = await publish_to_platform(target_pub_platform, creds, body.content)
+    if is_buffer_proxy and result["status"] == "published":
+        result["response"] = f"[Buffer Proxy] Routed via Buffer queue to publish to {platform} ✅ ({result.get('response')})"
     published_at = datetime.utcnow().isoformat()
 
     await db["publish_log"].insert_one({

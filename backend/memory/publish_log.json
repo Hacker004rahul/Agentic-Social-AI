@@ -39,5 +39,38 @@
     "triggered_by": "agent_auto_replier",
     "user_id": "test_user_id",
     "_id": "local-1784736648363-0299b0a8"
+  },
+  {
+    "platform": "Twitter",
+    "content": "Reply to @test_user: thanks!...",
+    "status": "published",
+    "response": "Tweet posted successfully",
+    "published_at": "2026-07-22T16:18:21.673167",
+    "retry": false,
+    "triggered_by": "agent_auto_replier",
+    "user_id": "test_user_id",
+    "_id": "local-1784737101674-166ef16a"
+  },
+  {
+    "platform": "Twitter",
+    "content": "Reply to @test_user: thanks!...",
+    "status": "published",
+    "response": "Tweet posted successfully",
+    "published_at": "2026-07-22T16:18:54.129464",
+    "retry": false,
+    "triggered_by": "agent_auto_replier",
+    "user_id": "test_user_id",
+    "_id": "local-1784737134129-562d8278"
+  },
+  {
+    "platform": "Twitter",
+    "content": "Reply to @test_user: thanks!...",
+    "status": "published",
+    "response": "Tweet posted successfully",
+    "published_at": "2026-07-22T16:19:09.625961",
+    "retry": false,
+    "triggered_by": "agent_auto_replier",
+    "user_id": "test_user_id",
+    "_id": "local-1784737149627-78b78558"
   }
 ]
