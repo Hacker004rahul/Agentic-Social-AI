@@ -39,7 +39,10 @@ def _encrypt(text: str) -> str:
     return _fernet().encrypt(text.encode()).decode()
 
 def _redirect_uri(platform: str) -> str:
-    return f"{settings.OAUTH_REDIRECT_BASE}/social/oauth/{platform}/callback"
+    base = settings.OAUTH_REDIRECT_BASE
+    if platform.lower() == "x" and "localhost" in base:
+        base = base.replace("localhost", "127.0.0.1")
+    return f"{base}/social/oauth/{platform}/callback"
 
 def _close_popup(status: str, platform: str, error: str = "") -> HTMLResponse:
     """Returns an HTML page that posts a message to the opener and closes itself."""
