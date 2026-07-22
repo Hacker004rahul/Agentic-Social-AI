@@ -75,40 +75,91 @@ def _parse_state(state: str) -> dict:
         raise HTTPException(400, "Invalid OAuth state")
 
 
+FIELDS_MAP = {
+    "LinkedIn": [
+        {"key": "access_token", "label": "Access Token", "type": "password"},
+        {"key": "person_urn", "label": "Person URN (e.g. urn:li:person:ABC123)", "type": "text"}
+    ],
+    "Facebook": [
+        {"key": "access_token", "label": "Page Access Token", "type": "password"},
+        {"key": "page_id", "label": "Page ID", "type": "text"}
+    ],
+    "Instagram": [
+        {"key": "access_token", "label": "Instagram Access Token", "type": "password"},
+        {"key": "ig_user_id", "label": "Instagram User ID", "type": "text"}
+    ],
+    "Twitter": [
+        {"key": "api_key",       "label": "Consumer Key (API Key)", "type": "password"},
+        {"key": "api_secret",    "label": "Consumer Secret (API Secret)", "type": "password"},
+        {"key": "access_token",  "label": "Access Token", "type": "password"},
+        {"key": "access_secret", "label": "Access Secret (Access Token Secret)", "type": "password"}
+    ],
+    "YouTube": [
+        {"key": "access_token", "label": "OAuth Access Token", "type": "password"},
+        {"key": "channel_id",   "label": "Channel ID", "type": "text"}
+    ]
+}
+
+
 def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLResponse:
+    fields = FIELDS_MAP.get(platform, [])
+    fields_html = ""
+    for f in fields:
+        fields_html += f"""
+        <div class="form-group">
+            <label>{f['label']}</label>
+            <input type="{f['type']}" name="{f['key']}" required />
+        </div>
+        """
+
     html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Connect {platform} — Agentic Social AI</title>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; padding: 24px; display: grid; place-items: center; min-height: 80vh; margin: 0; }}
-        .card {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; max-width: 480px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; padding: 24px; display: grid; place-items: center; min-height: 90vh; margin: 0; }}
+        .card {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; max-width: 480px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); box-sizing: border-box; }}
         .badge {{ background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; display: inline-block; margin-bottom: 14px; letter-spacing: 0.05em; text-transform: uppercase; }}
         h2 {{ color: #f8fafc; margin: 0 0 8px 0; font-size: 1.35rem; }}
         p {{ font-size: 0.88rem; line-height: 1.6; color: #94a3b8; margin: 0 0 16px 0; }}
         code {{ background: #0f172a; color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-family: monospace; font-size: 0.84rem; border: 1px solid #1e293b; }}
         .btn {{ display: block; width: 100%; box-sizing: border-box; text-align: center; background: #2563eb; color: #ffffff; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer; transition: all 0.2s ease; margin-top: 14px; text-decoration: none; }}
         .btn:hover {{ background: #1d4ed8; transform: translateY(-1px); }}
-        .note {{ margin-top: 20px; padding-top: 16px; border-top: 1px solid #1e293b; font-size: 0.78rem; color: #64748b; }}
+        .btn-secondary {{ background: #1e293b; color: #cbd5e1; border: 1px solid #334155; margin-top: 8px; }}
+        .btn-secondary:hover {{ background: #334155; }}
+        .form-group {{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }}
+        .form-group label {{ font-size: 0.78rem; font-weight: 600; color: #94a3b8; }}
+        .form-group input {{ background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; color: #fff; font-size: 0.86rem; box-sizing: border-box; width: 100%; }}
+        .form-group input:focus {{ border-color: #2563eb; outline: none; }}
+        .section-divider {{ margin: 20px 0; border-top: 1px solid #1e293b; position: relative; }}
+        .section-divider span {{ position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #131b2e; padding: 0 10px; font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; }}
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="badge">Development Mode</div>
+        <div class="badge">Connection Center</div>
         <h2>Connect {platform}</h2>
         <p>Developer OAuth app key <code>{env_var}</code> is not configured in <code>backend/.env</code>.</p>
-        <p>You can connect using <strong>1-Click Demo Mode</strong> to test multi-agent campaign workflows and automatic scheduling right now.</p>
         
+        <!-- Option 1: Manual Keys -->
+        <form method="POST" action="/social/oauth/manual-connect">
+            <input type="hidden" name="user_id" value="{user_id}" />
+            <input type="hidden" name="platform" value="{platform}" />
+            {fields_html}
+            <button type="submit" class="btn">🔌 Save & Connect Real Account</button>
+        </form>
+
+        <div class="section-divider">
+            <span>Or</span>
+        </div>
+
+        <!-- Option 2: 1-Click Demo -->
         <form method="POST" action="/social/oauth/demo-connect">
             <input type="hidden" name="user_id" value="{user_id}" />
             <input type="hidden" name="platform" value="{platform}" />
-            <button type="submit" class="btn">Connect {platform} with Demo Mode</button>
+            <button type="submit" class="btn btn-secondary">✨ Connect with 1-Click Demo Mode</button>
         </form>
-
-        <div class="note">
-            For production live publishing, set <code>{env_var}</code> in <code>backend/.env</code> and restart the server.
-        </div>
     </div>
 </body>
 </html>"""
@@ -137,6 +188,23 @@ async def demo_connect(user_id: str = Form(...), platform: str = Form(...)):
             "ig_user_id": "demo-ig-instagram",
             "token_type": "demo",
         })
+    return _close_popup("success", platform)
+
+
+@router.post("/manual-connect")
+async def manual_connect(
+    request: Request,
+    user_id: str = Form(...),
+    platform: str = Form(...),
+):
+    form_data = await request.form()
+    fields = {}
+    for k, v in form_data.items():
+        if k not in ("user_id", "platform"):
+            fields[k] = str(v)
+            
+    p = normalize_platform(platform)
+    await _save_creds(user_id, p, fields)
     return _close_popup("success", platform)
 
 
