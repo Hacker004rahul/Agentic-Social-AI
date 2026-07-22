@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import api from './lib/api'
 import BrandForm       from './components/BrandForm'
 
+import { motion, AnimatePresence } from 'framer-motion'
+
 function AuthScreen({ onAuthenticated }) {
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -26,45 +28,195 @@ function AuthScreen({ onAuthenticated }) {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-card card bg-base-100" style={{ maxWidth: 520, width: '100%', padding: 28 }}>
-        <div className="auth-hero">
-          <div className="logo-mark">AS</div>
+    <div className="auth-shell" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Decorative Glowing Background Orbs */}
+      <div style={{
+        position: 'absolute', top: '-10%', left: '-10%', width: '50vw', height: '50vw',
+        background: 'radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%)',
+        zIndex: 0, pointerEvents: 'none', filter: 'blur(80px)'
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-10%', right: '-10%', width: '45vw', height: '45vw',
+        background: 'radial-gradient(circle, rgba(34, 211, 238, 0.08) 0%, transparent 70%)',
+        zIndex: 0, pointerEvents: 'none', filter: 'blur(80px)'
+      }} />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="auth-card card" 
+        style={{ 
+          maxWidth: 460, 
+          width: '100%', 
+          padding: '36px 32px',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          boxShadow: '0 40px 100px rgba(0, 0, 0, 0.4)',
+          position: 'relative',
+          zIndex: 1,
+          background: 'rgba(17, 24, 39, 0.7)',
+          backdropFilter: 'blur(24px)'
+        }}
+      >
+        <div className="auth-hero" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <motion.div 
+            initial={{ scale: 0.8, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+            className="logo-mark" 
+            style={{ width: 44, height: 44, borderRadius: 12, fontSize: '0.95rem' }}
+          >
+            AS
+          </motion.div>
           <div>
-            <div className="card-title launch-title">Agentic Social AI</div>
-            <div className="card-sub">Secure access to the autonomous campaign workspace with a premium, intelligent workflow.</div>
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="card-title launch-title" 
+              style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(90deg, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+            >
+              Agentic Social AI
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="card-sub"
+              style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.4, marginTop: 4 }}
+            >
+              Launch campaign flows using autonomous multi-agent pipelines.
+            </motion.div>
           </div>
         </div>
-        <div className="auth-badges">
-          <span className="badge badge-outline badge-success">13 agents</span>
-          <span className="badge badge-outline">Live orchestration</span>
-          <span className="badge badge-outline">Atlas ready</span>
-        </div>
-        <div className="tabs tabs-boxed" style={{ marginBottom: 16 }}>
-          <button className={`tab ${mode === 'login' ? 'tab-active' : ''}`} onClick={() => setMode('login')} type="button">Login</button>
-          <button className={`tab ${mode === 'register' ? 'tab-active' : ''}`} onClick={() => setMode('register')} type="button">Register</button>
-        </div>
-        <form onSubmit={submit} className="form-grid">
-          {mode === 'register' && (
-            <div className="field form-full">
-              <label>Name</label>
-              <input className="input input-bordered" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            </div>
-          )}
-          <div className="field form-full">
-            <label>Email</label>
-            <input className="input input-bordered" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          </div>
-          <div className="field form-full">
-            <label>Password</label>
-            <input className="input input-bordered" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-          </div>
-          {error && <div className="alert alert-error form-full">{error}</div>}
-          <button className="btn btn-primary form-full auth-submit" type="submit" disabled={loading}>
-            {loading ? 'Working…' : mode === 'login' ? 'Sign In' : 'Create Account'}
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+          className="auth-badges" 
+          style={{ marginBottom: 24, gap: 6 }}
+        >
+          <span className="badge badge-outline" style={{ borderColor: 'rgba(52, 211, 153, 0.3)', color: '#34d399', background: 'rgba(52, 211, 153, 0.05)', fontWeight: 600, fontSize: '0.74rem' }}>13 Agents active</span>
+          <span className="badge badge-outline" style={{ borderColor: 'rgba(255, 255, 255, 0.1)', color: '#cbd5e1', fontSize: '0.74rem' }}>Live stream pipeline</span>
+        </motion.div>
+
+        {/* Tab Switcher */}
+        <div className="tabs tabs-boxed" style={{ marginBottom: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', padding: 4, background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <button 
+            className={`tab ${mode === 'login' ? 'tab-active' : ''}`} 
+            style={{ 
+              borderRadius: 8, 
+              fontSize: '0.86rem', 
+              fontWeight: 600, 
+              background: mode === 'login' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: mode === 'login' ? '#fff' : '#94a3b8',
+              border: 'none',
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => setMode('login')} 
+            type="button"
+          >
+            Login
           </button>
+          <button 
+            className={`tab ${mode === 'register' ? 'tab-active' : ''}`} 
+            style={{ 
+              borderRadius: 8, 
+              fontSize: '0.86rem', 
+              fontWeight: 600, 
+              background: mode === 'register' ? 'rgba(255,255,255,0.08)' : 'transparent',
+              color: mode === 'register' ? '#fff' : '#94a3b8',
+              border: 'none',
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => setMode('register')} 
+            type="button"
+          >
+            Register
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <AnimatePresence mode="wait">
+            {mode === 'register' && (
+              <motion.div 
+                key="name-field"
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+                className="field form-full"
+                style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+              >
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1' }}>Name</label>
+                <input 
+                  className="input input-bordered" 
+                  style={{ width: '100%', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', borderRadius: 10, padding: '10px 14px' }}
+                  value={form.name} 
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                  required 
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="field form-full" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1' }}>Email</label>
+            <input 
+              className="input input-bordered" 
+              style={{ width: '100%', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', borderRadius: 10, padding: '10px 14px' }}
+              type="email" 
+              value={form.email} 
+              onChange={(e) => setForm({ ...form, email: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <div className="field form-full" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#cbd5e1' }}>Password</label>
+            <input 
+              className="input input-bordered" 
+              style={{ width: '100%', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', borderRadius: 10, padding: '10px 14px' }}
+              type="password" 
+              value={form.password} 
+              onChange={(e) => setForm({ ...form, password: e.target.value })} 
+              required 
+            />
+          </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="alert alert-error form-full"
+                style={{ fontSize: '0.8rem', padding: '10px 14px', borderRadius: 8, background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.button 
+            whileHover={{ scale: 1.01, boxShadow: '0 10px 25px rgba(37, 99, 235, 0.35)' }}
+            whileTap={{ scale: 0.99 }}
+            className="btn btn-primary form-full auth-submit" 
+            style={{ width: '100%', borderRadius: 10, fontWeight: 700, fontSize: '0.9rem', padding: '12px', background: '#2563eb', border: 'none', color: '#fff', cursor: 'pointer', marginTop: 8 }}
+            type="submit" 
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : mode === 'login' ? (
+              'Sign In'
+            ) : (
+              'Create Account'
+            )}
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
     </div>
   )
 }
