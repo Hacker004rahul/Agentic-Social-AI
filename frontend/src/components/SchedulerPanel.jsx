@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import api from '../lib/api'
 
-const PLAT_C     = { Instagram:'#e1306c', LinkedIn:'#0ea5e9', Twitter:'#000000', YouTube:'#ff0000', Facebook:'#1877f2' }
-const PLAT_LABEL = { Instagram:'Instagram', LinkedIn:'LinkedIn', Twitter:'Twitter', YouTube:'YouTube', Facebook:'Facebook' }
+const PLAT_C     = { Instagram:'#e1306c', LinkedIn:'#0ea5e9', Twitter:'#000000', YouTube:'#ff0000', Facebook:'#1877f2', Buffer:'#4b5563', Hootsuite:'#d97706' }
+const PLAT_LABEL = { Instagram:'Instagram', LinkedIn:'LinkedIn', Twitter:'Twitter', YouTube:'YouTube', Facebook:'Facebook', Buffer:'Buffer', Hootsuite:'Hootsuite' }
 
 // OAuth start URLs — backend handles the redirect to each platform
 const OAUTH_PATH = {
@@ -11,6 +11,8 @@ const OAUTH_PATH = {
   Instagram: '/social/oauth/facebook/start',  // same Meta app, saves both
   Twitter:   '/social/oauth/x/start',
   YouTube:   '/social/oauth/youtube/start',
+  Buffer:    '/social/oauth/buffer/start',
+  Hootsuite: '/social/oauth/hootsuite/start',
 }
 
 // ── Confirm Publish Modal ──────────────────────────────────
@@ -240,6 +242,12 @@ export default function SchedulerPanel({ scheduler }) {
               <div style={{ fontSize:'0.82rem', color:'var(--text2)', lineHeight:1.55, marginBottom:10 }}>
                 {p.content?.length > 160 ? p.content.slice(0, 160) + '…' : p.content}
               </div>
+
+              {p.image_data && (
+                <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', maxWidth: 320, border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  <img src={p.image_data} alt="Post graphic" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
+              )}
 
               {p.engagement && (
                 <div style={{ display:'flex', gap:14, fontSize:'0.72rem', color:'var(--green)', marginBottom:10, flexWrap:'wrap' }}>

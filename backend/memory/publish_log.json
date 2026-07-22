@@ -6,5 +6,27 @@
     "response": "Story published \u2705",
     "published_at": "2026-06-17T23:22:51.389333",
     "retry": false
+  },
+  {
+    "platform": "Twitter",
+    "content": "Reply to @test_user: thanks!...",
+    "status": "published",
+    "response": "Tweet posted successfully",
+    "published_at": "2026-07-22T10:17:58.913543",
+    "retry": false,
+    "triggered_by": "agent_auto_replier",
+    "user_id": "test_user_id",
+    "_id": "local-1784715478914-ef64f2c3"
+  },
+  {
+    "platform": "Twitter",
+    "content": "Reply to @test_user: thanks!...",
+    "status": "published",
+    "response": "Tweet posted successfully",
+    "published_at": "2026-07-22T10:43:47.319881",
+    "retry": false,
+    "triggered_by": "agent_auto_replier",
+    "user_id": "test_user_id",
+    "_id": "local-1784717027320-336716c8"
   }
 ]

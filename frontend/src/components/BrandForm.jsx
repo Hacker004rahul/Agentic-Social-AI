@@ -5,6 +5,8 @@ const PLATFORMS  = [
   { id:'twitter', label:'Twitter', logo:'Twitter' },
   { id:'facebook', label:'Facebook', logo:'Facebook' },
   { id:'youtube', label:'YouTube', logo:'YouTube' },
+  { id:'buffer', label:'Buffer', logo:'Buffer' },
+  { id:'hootsuite', label:'Hootsuite', logo:'Hootsuite' },
 ]
 const TONES      = ['casual','professional','inspirational','witty','educational']
 const GOALS      = ['awareness','engagement','conversion','retention']
@@ -52,6 +54,17 @@ const getPlatformLogo = (platform) => {
         <path d="M16.671 15.469l.469-3.047h-2.927v-1.977c0-.833.408-1.644 1.719-1.644h1.33V6.324s-1.207-.206-2.361-.206c-2.409 0-3.984 1.46-3.984 4.104v2.323H8.078v3.047h2.839v7.365a12.1 12.1 0 0 0 3.75 0v-7.365h2.004z" fill="white"/>
       </svg>
     ),
+    Buffer: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    Hootsuite: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M8 14s1.5-2 4-2 4 2 4 2M9 9h.01M15 9h.01" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
   }
   return logos[platform]
 }
@@ -62,7 +75,8 @@ export default function BrandForm({ onSubmit, loading }) {
   const [form, setForm] = useState({
     brand_name:'', target_audience:'', platforms:['linkedin','twitter','facebook','youtube'],
     competitors:'', tone:'casual', offer:'',
-    campaign_goal:'awareness', industry:'general', constraints:''
+    campaign_goal:'awareness', industry:'general', constraints:'',
+    autonomous: false, autonomous_interval_hours: 24
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -142,6 +156,37 @@ export default function BrandForm({ onSubmit, loading }) {
                 </button>
               ))}
             </div>
+          </div>
+          <div className="field form-full" style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: form.autonomous ? '12px' : '0' }}>
+              <input 
+                type="checkbox" 
+                className="checkbox checkbox-primary" 
+                id="autonomous"
+                checked={form.autonomous} 
+                onChange={e => set('autonomous', e.target.checked)} 
+              />
+              <div>
+                <label htmlFor="autonomous" style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)', cursor: 'pointer' }}>Enable Autonomous Agent Loop</label>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>The 13-agent team will run campaigns and reply to comments automatically in the background.</div>
+              </div>
+            </div>
+            {form.autonomous && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '32px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: 600 }}>Execution Frequency:</label>
+                <select 
+                  className="select select-bordered select-sm" 
+                  value={form.autonomous_interval_hours} 
+                  onChange={e => set('autonomous_interval_hours', parseInt(e.target.value))}
+                >
+                  <option value={1}>Every 1 Hour (Testing)</option>
+                  <option value={6}>Every 6 Hours</option>
+                  <option value={12}>Every 12 Hours</option>
+                  <option value={24}>Every 24 Hours (Daily)</option>
+                  <option value={48}>Every 48 Hours</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

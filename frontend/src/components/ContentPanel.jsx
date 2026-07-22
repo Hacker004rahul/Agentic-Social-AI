@@ -47,6 +47,11 @@ export default function ContentPanel({ content }) {
               </button>
             </div>
             <div className="post-text">{p.content}</div>
+            {p.image_data && (
+              <div style={{ margin: '12px 0', borderRadius: 10, overflow: 'hidden', maxWidth: 320, border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <img src={p.image_data} alt="Post graphic" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              </div>
+            )}
             <div className="char-bar"><div className="char-fill" style={{ width:`${pct}%`, background:barC }} /></div>
           </div>
         )

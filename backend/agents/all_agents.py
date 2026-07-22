@@ -108,18 +108,51 @@ class ContentAgent(BaseAgent):
         platforms = normalize_platforms(brand.get("platforms",["Instagram"]))
         tags      = (trends or {}).get("trending_hashtags",[])
         posts = []
+
+        import os
+        from services.gemini_generator import generate_caption_and_image
+        import asyncio
+
         for p in platforms:
-            hook     = fill(random.choice(HOOK_TEMPLATES), brand)
-            body     = fill(random.choice(platform_lookup(BODY_TEMPLATES, p)), brand)
-            cta      = fill(random.choice(CTA_MAP.get(goal, CTA_MAP["awareness"])), brand)
-            base_tags= random.sample(HASHTAG_SETS.get(p,[]), min(3, len(HASHTAG_SETS.get(p,[]))))
-            all_tags = list(set(base_tags + random.sample(tags, min(2,len(tags)))))
-            brand_tag= f"#{brand.get('brand_name','Brand').replace(' ','')}"
-            content  = f"{hook}\n\n{body}\n\n{cta}\n\n{brand_tag} {' '.join(all_tags)}" if p != "Twitter" else f"{hook} {cta} {brand_tag}"
-            limit    = CHAR_LIMITS.get(p,2200)
-            truncated= len(content) > limit
-            if truncated: content = content[:limit-3]+"..."
-            posts.append({"platform":p,"content":content,"char_count":len(content),"char_limit":limit,"truncated":truncated})
+            limit = CHAR_LIMITS.get(p,2200)
+            gemini_res = None
+            if os.getenv("GEMINI_API_KEY"):
+                try:
+                    # Run the async generator synchronously in our pipeline
+                    gemini_res = asyncio.run(generate_caption_and_image(p, brand, goal, limit))
+                except Exception as e:
+                    print(f"[ContentAgent] Gemini run failed, falling back to templates: {e}")
+
+            if gemini_res:
+                content = gemini_res["content"]
+                truncated = len(content) > limit
+                if truncated: content = content[:limit-3]+"..."
+                posts.append({
+                    "platform": p,
+                    "content": content,
+                    "char_count": len(content),
+                    "char_limit": limit,
+                    "truncated": truncated,
+                    "image_data": gemini_res.get("image_data")
+                })
+            else:
+                hook     = fill(random.choice(HOOK_TEMPLATES), brand)
+                body     = fill(random.choice(platform_lookup(BODY_TEMPLATES, p)), brand)
+                cta      = fill(random.choice(CTA_MAP.get(goal, CTA_MAP["awareness"])), brand)
+                base_tags= random.sample(HASHTAG_SETS.get(p,[]), min(3, len(HASHTAG_SETS.get(p,[]))))
+                all_tags = list(set(base_tags + random.sample(tags, min(2,len(tags)))))
+                brand_tag= f"#{brand.get('brand_name','Brand').replace(' ','')}"
+                content  = f"{hook}\n\n{body}\n\n{cta}\n\n{brand_tag} {' '.join(all_tags)}" if p != "Twitter" else f"{hook} {cta} {brand_tag}"
+                truncated= len(content) > limit
+                if truncated: content = content[:limit-3]+"..."
+                posts.append({
+                    "platform": p,
+                    "content": content,
+                    "char_count": len(content),
+                    "char_limit": limit,
+                    "truncated": truncated,
+                    "image_data": None
+                })
         return {"agent": self.name, "posts": posts}
 
 # ── 4. BrandVoiceAgent ─────────────────────────────────────

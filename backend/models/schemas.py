@@ -48,6 +48,9 @@ class BrandInput(BaseModel):
     budget:            str = ""
     posting_frequency: str = "daily"
     constraints:       str = ""
+    autonomous:        bool = False
+    autonomous_interval_hours: int = 24
+    last_autonomous_run_at: Optional[str] = None
 
     @field_validator("platforms", mode="before")
     @classmethod

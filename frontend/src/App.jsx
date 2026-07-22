@@ -233,10 +233,12 @@ import InboxPanel      from './components/InboxPanel'
 import RecyclePanel    from './components/RecyclePanel'
 import PublisherPanel  from './components/PublisherPanel'
 import HistoryPanel    from './components/HistoryPanel'
+import AutonomousPanel from './components/AutonomousPanel'
 
 const NAV = [
   { section: 'Workspace', items: [
     { id: 'input',      icon: 'D', label: 'Dashboard' },
+    { id: 'autonomous', icon: '🤖', label: 'Autopilot', badge: 'Active', bc: 'badge-accent' },
     { id: 'content',    icon: 'C', label: 'Content' },
   ]},
   { section: 'Publish', items: [
@@ -420,6 +422,7 @@ export default function App() {
             )
           )}
 
+          {tab === 'autonomous' && <AutonomousPanel />}
           {tab === 'content'    && (result ? <ContentPanel    content={result.content}        /> : <Empty icon="C" title="No Content Yet" />)}
           {tab === 'publisher'  && (result ? <PublisherPanel  publisher={result.publisher}    /> : <Empty icon="P" title="Nothing Published Yet"/>)}
           {tab === 'scheduler'  && (result ? <SchedulerPanel  scheduler={result.scheduler}    /> : <Empty icon="S" title="The Queue Is Empty" />)}

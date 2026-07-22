@@ -33,7 +33,9 @@ async def startup():
         await connect_db()
         import asyncio
         from services.background_publisher import start_background_publisher
+        from services.background_orchestrator import start_background_orchestrator
         asyncio.create_task(start_background_publisher())
+        asyncio.create_task(start_background_orchestrator())
     except Exception as exc:
         print(f"[!] DB warning: {exc}")
 

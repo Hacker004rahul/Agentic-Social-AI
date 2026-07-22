@@ -100,6 +100,14 @@ FIELDS_MAP = {
     "YouTube": [
         {"key": "access_token", "label": "OAuth Access Token", "type": "password"},
         {"key": "channel_id",   "label": "Channel ID", "type": "text"}
+    ],
+    "Buffer": [
+        {"key": "access_token", "label": "Buffer Access Token", "type": "password"},
+        {"key": "profile_ids", "label": "Comma-separated Profile IDs", "type": "text"}
+    ],
+    "Hootsuite": [
+        {"key": "access_token", "label": "Hootsuite Access Token", "type": "password"},
+        {"key": "social_profile_ids", "label": "Comma-separated Social Profile IDs", "type": "text"}
     ]
 }
 
@@ -512,3 +520,11 @@ async def youtube_callback(code: str = None, state: str = None, error: str = Non
         "channel_id":    channel_id,
     })
     return _close_popup("success", "YouTube")
+
+@router.get("/buffer/start")
+async def buffer_start(user_id: str):
+    return _missing_creds_html("Buffer", "BUFFER_CLIENT_ID", user_id)
+
+@router.get("/hootsuite/start")
+async def hootsuite_start(user_id: str):
+    return _missing_creds_html("Hootsuite", "HOOTSUITE_CLIENT_ID", user_id)
