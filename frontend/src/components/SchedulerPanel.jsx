@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import api from '../lib/api'
 
-const PLAT_C     = { Instagram:'#e1306c', LinkedIn:'#0ea5e9', Twitter:'#000000', YouTube:'#ff0000', Facebook:'#1877f2', Buffer:'#4b5563', Hootsuite:'#d97706' }
-const PLAT_LABEL = { Instagram:'Instagram', LinkedIn:'LinkedIn', Twitter:'Twitter', YouTube:'YouTube', Facebook:'Facebook', Buffer:'Buffer', Hootsuite:'Hootsuite' }
+const PLAT_C     = { Instagram:'#e1306c', LinkedIn:'#0ea5e9', Twitter:'#000000', YouTube:'#ff0000', Facebook:'#1877f2', Buffer:'#4b5563' }
+const PLAT_LABEL = { Instagram:'Instagram', LinkedIn:'LinkedIn', Twitter:'Twitter', YouTube:'YouTube', Facebook:'Facebook', Buffer:'Buffer' }
 
 // OAuth start URLs — backend handles the redirect to each platform
 const OAUTH_PATH = {
@@ -12,7 +12,6 @@ const OAUTH_PATH = {
   Twitter:   '/social/oauth/x/start',
   YouTube:   '/social/oauth/youtube/start',
   Buffer:    '/social/oauth/buffer/start',
-  Hootsuite: '/social/oauth/hootsuite/start',
 }
 
 // ── Confirm Publish Modal ──────────────────────────────────

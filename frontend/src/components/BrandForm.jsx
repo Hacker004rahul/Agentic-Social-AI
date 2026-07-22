@@ -6,7 +6,6 @@ const PLATFORMS  = [
   { id:'facebook', label:'Facebook', logo:'Facebook' },
   { id:'youtube', label:'YouTube', logo:'YouTube' },
   { id:'buffer', label:'Buffer', logo:'Buffer' },
-  { id:'hootsuite', label:'Hootsuite', logo:'Hootsuite' },
 ]
 const TONES      = ['casual','professional','inspirational','witty','educational']
 const GOALS      = ['awareness','engagement','conversion','retention']
@@ -57,12 +56,6 @@ const getPlatformLogo = (platform) => {
     Buffer: (
       <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    Hootsuite: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M8 14s1.5-2 4-2 4 2 4 2M9 9h.01M15 9h.01" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
   }

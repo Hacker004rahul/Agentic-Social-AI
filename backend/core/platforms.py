@@ -11,7 +11,6 @@ PLATFORM_ALIASES = {
     "fb": "Facebook",
     "tiktok": "TikTok",
     "buffer": "Buffer",
-    "hootsuite": "Hootsuite",
 }
 
 
