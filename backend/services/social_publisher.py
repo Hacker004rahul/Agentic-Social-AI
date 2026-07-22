@@ -121,7 +121,7 @@ async def _publish_x(creds: dict, content: str) -> dict:
         return {"status": "failed", "response": "X requires access_token"}
 
     # OAuth 2.0 path (from OAuth flow)
-    if token_type == "oauth2" or not creds.get("api_key"):
+    if not creds.get("api_key"):
         async with httpx.AsyncClient() as client:
             r = await client.post(
                 "https://api.twitter.com/2/tweets",
