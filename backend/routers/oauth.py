@@ -40,7 +40,7 @@ def _encrypt(text: str) -> str:
 
 def _redirect_uri(platform: str) -> str:
     base = settings.OAUTH_REDIRECT_BASE
-    if platform.lower() == "x" and "localhost" in base:
+    if "localhost" in base:
         base = base.replace("localhost", "127.0.0.1")
     return f"{base}/social/oauth/{platform}/callback"
 
@@ -104,7 +104,7 @@ FIELDS_MAP = {
 }
 
 
-def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLResponse:
+def _missing_creds_html(platform: str, env_var: str, user_id: str, live_url: str = None) -> HTMLResponse:
     fields = FIELDS_MAP.get(platform, [])
     fields_html = ""
     for f in fields:
@@ -112,6 +112,15 @@ def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLRespon
         <div class="form-group">
             <label>{f['label']}</label>
             <input type="{f['type']}" name="{f['key']}" required />
+        </div>
+        """
+
+    live_button = ""
+    if live_url:
+        live_button = f"""
+        <a href="{live_url}" class="btn btn-live">🔗 Sign in to Live {platform} Account</a>
+        <div class="section-divider">
+            <span>Or</span>
         </div>
         """
 
@@ -129,6 +138,8 @@ def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLRespon
         code {{ background: #0f172a; color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-family: monospace; font-size: 0.84rem; border: 1px solid #1e293b; }}
         .btn {{ display: block; width: 100%; box-sizing: border-box; text-align: center; background: #2563eb; color: #ffffff; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer; transition: all 0.2s ease; margin-top: 14px; text-decoration: none; }}
         .btn:hover {{ background: #1d4ed8; transform: translateY(-1px); }}
+        .btn-live {{ background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.15); }}
+        .btn-live:hover {{ background: linear-gradient(135deg, #059669, #047857); }}
         .btn-secondary {{ background: #1e293b; color: #cbd5e1; border: 1px solid #334155; margin-top: 8px; }}
         .btn-secondary:hover {{ background: #334155; }}
         .form-group {{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }}
@@ -143,8 +154,10 @@ def _missing_creds_html(platform: str, env_var: str, user_id: str) -> HTMLRespon
     <div class="card">
         <div class="badge">Connection Center</div>
         <h2>Connect {platform}</h2>
-        <p>Developer OAuth app key <code>{env_var}</code> is not configured in <code>backend/.env</code>.</p>
+        <p>Choose your preferred connection method below:</p>
         
+        {live_button}
+
         <!-- Option 1: Manual Keys -->
         <form method="POST" action="/social/oauth/manual-connect">
             <input type="hidden" name="user_id" value="{user_id}" />
@@ -440,19 +453,21 @@ async def x_callback(code: str = None, state: str = None, error: str = None):
 @router.get("/youtube/start")
 async def youtube_start(user_id: str):
     client_id = os.getenv("GOOGLE_CLIENT_ID") or settings.GOOGLE_CLIENT_ID
-    if not client_id:
-        return _missing_creds_html("YouTube", "GOOGLE_CLIENT_ID", user_id)
-    state  = _make_state(user_id)
-    params = urllib.parse.urlencode({
-        "client_id":             client_id,
-        "redirect_uri":          _redirect_uri("youtube"),
-        "response_type":         "code",
-        "scope":                 "https://www.googleapis.com/auth/youtube.force-ssl",
-        "access_type":           "offline",
-        "prompt":                "consent",
-        "state":                 state,
-    })
-    return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
+    live_url = None
+    if client_id:
+        state  = _make_state(user_id)
+        params = urllib.parse.urlencode({
+            "client_id":             client_id,
+            "redirect_uri":          _redirect_uri("youtube"),
+            "response_type":         "code",
+            "scope":                 "https://www.googleapis.com/auth/youtube.force-ssl",
+            "access_type":           "offline",
+            "prompt":                "consent",
+            "state":                 state,
+        })
+        live_url = f"https://accounts.google.com/o/oauth2/v2/auth?{params}"
+        
+    return _missing_creds_html("YouTube", "GOOGLE_CLIENT_ID", user_id, live_url=live_url)
 
 
 @router.get("/youtube/callback")
