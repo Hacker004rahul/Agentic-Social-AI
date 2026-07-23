@@ -202,7 +202,7 @@ class GenerateMetadataInput(BaseModel):
 async def generate_video_metadata(body: GenerateMetadataInput, user=Depends(get_current_user)):
     import httpx
     import json
-    api_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {
             "title": f"Amazing Short about {body.topic}",

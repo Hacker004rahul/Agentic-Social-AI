@@ -11,7 +11,7 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import connect_db, close_db
-from routers import auth, agents, scheduler, analytics, brands
+from routers import auth, agents, scheduler, analytics, brands, video
 from routers import social
 from routers import oauth
 
@@ -32,6 +32,7 @@ app.include_router(analytics.router)
 app.include_router(brands.router)
 app.include_router(social.router)
 app.include_router(oauth.router)
+app.include_router(video.router)
 
 @app.on_event("startup")
 async def startup():

@@ -234,12 +234,14 @@ import RecyclePanel    from './components/RecyclePanel'
 import PublisherPanel  from './components/PublisherPanel'
 import HistoryPanel    from './components/HistoryPanel'
 import AutonomousPanel from './components/AutonomousPanel'
+import VideoStudioPanel from './components/VideoStudioPanel'
 
 const NAV = [
   { section: 'Workspace', items: [
     { id: 'input',      icon: 'D', label: 'Dashboard' },
     { id: 'autonomous', icon: '🤖', label: 'Autopilot', badge: 'Active', bc: 'badge-accent' },
     { id: 'content',    icon: 'C', label: 'Content' },
+    { id: 'video_studio', icon: '🎬', label: 'Video Studio', badge: 'AI', bc: 'badge-secondary' },
   ]},
   { section: 'Publish', items: [
     { id: 'publisher',  icon: 'P', label: 'Publisher', badge: 'Live',  bc: 'badge-success' },
@@ -445,6 +447,7 @@ export default function App() {
           )}
 
           {tab === 'autonomous' && <AutonomousPanel />}
+          {tab === 'video_studio' && <VideoStudioPanel />}
           {tab === 'content'    && (result ? <ContentPanel    content={result.content}        /> : <Empty icon="C" title="No Content Yet" />)}
           {tab === 'publisher'  && (result ? <PublisherPanel  publisher={result.publisher}    /> : <Empty icon="P" title="Nothing Published Yet"/>)}
           {tab === 'scheduler'  && (result ? <SchedulerPanel  scheduler={result.scheduler}    /> : <Empty icon="S" title="The Queue Is Empty" />)}
