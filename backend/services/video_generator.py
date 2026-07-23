@@ -245,3 +245,47 @@ def uuid_sec() -> str:
     import uuid
     import secrets
     return f"{uuid.uuid4().hex[:12]}_{secrets.token_hex(4)}"
+
+
+async def auto_synthesis_videos_for_scheduled_posts(run_id: str, user_id: str):
+    db = get_db()
+    # Find all scheduled items generated in this run
+    items = await db["scheduler"].find({"run_id": run_id}).to_list(100)
+    for item in items:
+        # Check if platform is YouTube and it doesn't have video URL yet
+        if item.get("platform") == "YouTube" and not item.get("video_url"):
+            # Update status to "generating_video" so UI tracks in real-time
+            await db["scheduler"].update_one(
+                {"id": item["id"]},
+                {"$set": {"status": "generating_video"}}
+            )
+            try:
+                # Generate AI video draft (includes storyboard, voice, and visual CDN fallback)
+                project = await create_video_project(
+                    brand_name=item.get("brand_name", "My Brand"),
+                    user_id=user_id,
+                    platform="YouTube",
+                    duration=30,  # default Shorts/Video length
+                    content=item.get("content", ""),
+                    mood="chill",
+                    voice_gender="female"
+                )
+                # Link video assets directly to the scheduled post document
+                await db["scheduler"].update_one(
+                    {"id": item["id"]},
+                    {
+                        "$set": {
+                            "video_url": project["video_url"],
+                            "video_title": project["caption"][:60],
+                            "video_category": "22",
+                            "video_privacy": "public",
+                            "status": "scheduled" # Set back to scheduled so publisher picks it up
+                        }
+                    }
+                )
+            except Exception as e:
+                # Fallback to standard scheduled text if video gen fails
+                await db["scheduler"].update_one(
+                    {"id": item["id"]},
+                    {"$set": {"status": "scheduled", "error_message": f"Auto video gen failed: {str(e)}"}}
+                )

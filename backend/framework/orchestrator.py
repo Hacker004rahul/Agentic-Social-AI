@@ -109,6 +109,10 @@ class Orchestrator:
                 p["id"]         = str(uuid.uuid4())
                 p["created_at"] = datetime.utcnow()
                 await db["scheduler"].insert_one(p)
+            
+            # Asynchronously trigger background video synthesis pipeline for video platform items
+            from services.video_generator import auto_synthesis_videos_for_scheduled_posts
+            asyncio.create_task(auto_synthesis_videos_for_scheduled_posts(run_id, user_id))
 
         await ws_manager.broadcast(run_id, {"type":"complete","run_id":run_id,"result":result})
         return result

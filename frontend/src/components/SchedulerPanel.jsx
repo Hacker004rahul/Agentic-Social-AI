@@ -584,7 +584,12 @@ export default function SchedulerPanel({ scheduler }) {
             <div className="post-card" key={i} style={{ borderLeft:`4px solid ${c}` }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:9, flexWrap:'wrap' }}>
                 <span style={{ fontWeight:800, fontSize:'0.82rem', color: c }}>{p.platform}</span>
-                <span className={`badge badge-outline ${isPublished ? 'badge-success' : 'badge-info'}`}>{p.status}</span>
+                <span className={`badge badge-outline ${
+                  isPublished ? 'badge-success' :
+                  p.status === 'generating_video' ? 'badge-warning' : 'badge-info'
+                }`}>
+                  {p.status === 'generating_video' ? '🎬 Generating Video...' : p.status}
+                </span>
                 {hasCreds && !isPublished && (
                   <span className="badge badge-success badge-outline" style={{ fontSize:'0.62rem' }}>● connected</span>
                 )}
