@@ -11,6 +11,13 @@ YouTube    | YouTube Data API v3               | access_token (OAuth2 refresh_to
 """
 import httpx
 import base64
+import os
+try:
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    _GOOGLE_API_OK = True
+except ImportError:
+    _GOOGLE_API_OK = False
 from typing import Optional
 from core.platforms import normalize_platform
 
@@ -166,11 +173,77 @@ async def _publish_x(creds: dict, content: str) -> dict:
 # ── YouTube Data API v3 ────────────────────────────────────
 async def _publish_youtube(creds: dict, content: str) -> dict:
     """
-    Uses YouTube Data API v3 to insert a Community post (text post).
-    For video uploads the caller must supply a video_url in creds.
-    Requires: access_token (OAuth2), channel_id
-    Docs: https://developers.google.com/youtube/v3/docs/posts/insert
+    Uses YouTube Data API v3 to upload a video if video_url is provided.
+    Otherwise, inserts a Community post (text post).
     """
+    import asyncio
+    from google.oauth2.credentials import Credentials
+    from core.config import settings
+
+    video_url = creds.get("video_url")
+    if video_url:
+        token = creds.get("access_token")
+        refresh_tok = creds.get("refresh_token")
+        if not token:
+            return {"status": "failed", "response": "YouTube requires access_token"}
+
+        google_creds = Credentials(
+            token=token,
+            refresh_token=refresh_tok,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=settings.GOOGLE_CLIENT_ID,
+            client_secret=settings.GOOGLE_CLIENT_SECRET
+        )
+
+        title = creds.get("video_title") or "Autopilot Video Post"
+        category_id = creds.get("video_category") or "22"
+        privacy_status = creds.get("video_privacy") or "unlisted"
+        license_type = creds.get("video_license") or "youtube"
+        self_declared_kids = creds.get("made_for_kids", False)
+        notify_subscribers = creds.get("notify_subscribers", True)
+
+        body = {
+            "snippet": {
+                "title": title,
+                "description": content,
+                "categoryId": category_id,
+            },
+            "status": {
+                "privacyStatus": privacy_status,
+                "license": license_type,
+                "selfDeclaredMadeForKids": self_declared_kids
+            }
+        }
+
+        # Resolve local path
+        local_path = video_url.lstrip("/")
+        if not os.path.exists(local_path):
+            local_path = os.path.join(os.getcwd(), local_path)
+
+        if not os.path.exists(local_path):
+            return {"status": "failed", "response": f"Video file not found at: {video_url}"}
+
+        def _do_upload():
+            youtube = build("youtube", "v3", credentials=google_creds)
+            media = MediaFileUpload(local_path, mimetype="video/mp4", resumable=True)
+            request = youtube.videos().insert(
+                part="snippet,status",
+                body=body,
+                media_body=media,
+                notifySubscribers=notify_subscribers
+            )
+            return request.execute()
+
+        try:
+            response = await asyncio.to_thread(_do_upload)
+            video_id = response.get("id")
+            return {"status": "published", "response": f"YouTube video live ✅ (id: {video_id})"}
+        except Exception as e:
+            # Check for oauth refresh token in credentials or try to refresh google credentials
+            # If failed, we can return the error message
+            return {"status": "failed", "response": f"YouTube upload failed: {str(e)}"}
+
+    # Text post fallback (Community post)
     token       = creds.get("access_token")
     refresh_tok = creds.get("refresh_token")
     channel_id  = creds.get("channel_id") or "me"
@@ -192,7 +265,6 @@ async def _publish_youtube(creds: dict, content: str) -> dict:
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         )
         if r.status_code == 401 and refresh_tok and settings.GOOGLE_CLIENT_ID:
-            from core.config import settings
             ref_r = await client.post(
                 "https://oauth2.googleapis.com/token",
                 data={

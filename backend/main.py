@@ -15,9 +15,15 @@ from routers import auth, agents, scheduler, analytics, brands
 from routers import social
 from routers import oauth
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 app = FastAPI(title="Agentic Social AI", version="4.0.0", docs_url="/docs")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(auth.router)
 app.include_router(agents.router)

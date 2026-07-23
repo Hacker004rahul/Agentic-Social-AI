@@ -53,8 +53,15 @@ async def start_background_publisher():
                     continue
 
                 target_pub_platform = "Buffer" if is_buffer_proxy else platform
+                
+                # Merge video parameters if present in scheduled post document
+                merged_creds = {**creds}
+                for field in ["video_url", "video_title", "video_category", "video_privacy", "video_license", "notify_subscribers", "made_for_kids"]:
+                    if field in post:
+                        merged_creds[field] = post[field]
+
                 print(f"[🤖 Agent Auto-Publisher] Auto-publishing queued post ID {post.get('id')} to {platform} (via Buffer Proxy: {is_buffer_proxy})...")
-                result = await publish_to_platform(target_pub_platform, creds, post.get("content", ""))
+                result = await publish_to_platform(target_pub_platform, merged_creds, post.get("content", ""))
                 if is_buffer_proxy and result["status"] == "published":
                     result["response"] = f"[Buffer Proxy] Routed via Buffer queue to publish to {platform} ✅ ({result.get('response')})"
                 published_at = datetime.utcnow().isoformat()

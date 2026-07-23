@@ -66,5 +66,31 @@ class TestAggregatorsPublishing(unittest.IsolatedAsyncioTestCase):
         self.assertIn("[Buffer Proxy]", result["response"])
         mock_publish.assert_called_once_with("Buffer", {"access_token": "mock_token", "profile_ids": "123"}, "Test Proxy Content")
 
+    @patch("services.social_publisher.build")
+    @patch("services.social_publisher.MediaFileUpload")
+    @patch("services.social_publisher.os.path.exists")
+    async def test_youtube_video_upload_mock(self, mock_exists, mock_media, mock_build):
+        from unittest.mock import MagicMock
+        mock_exists.return_value = True
+        
+        mock_youtube = MagicMock()
+        mock_build.return_value = mock_youtube
+        mock_insert = MagicMock()
+        mock_youtube.videos.return_value.insert.return_value = mock_insert
+        mock_insert.execute.return_value = {"id": "test_youtube_video_123"}
+        
+        creds = {
+            "access_token": "mock_yt_token",
+            "refresh_token": "mock_yt_refresh",
+            "video_url": "static/uploads/test.mp4",
+            "video_title": "Test Title",
+            "video_category": "22",
+            "video_privacy": "unlisted"
+        }
+        res = await publish_to_platform("YouTube", creds, "Test Video Description")
+        self.assertEqual(res["status"], "published")
+        self.assertIn("YouTube video live", res["response"])
+        self.assertIn("test_youtube_video_123", res["response"])
+
 if __name__ == "__main__":
     unittest.main()

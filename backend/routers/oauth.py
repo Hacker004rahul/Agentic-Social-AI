@@ -464,7 +464,7 @@ async def youtube_start(user_id: str):
             "client_id":             client_id,
             "redirect_uri":          _redirect_uri("youtube"),
             "response_type":         "code",
-            "scope":                 "https://www.googleapis.com/auth/youtube.force-ssl",
+            "scope":                 "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.upload",
             "access_type":           "offline",
             "prompt":                "consent",
             "state":                 state,
