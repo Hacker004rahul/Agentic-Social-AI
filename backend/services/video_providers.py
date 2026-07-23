@@ -135,8 +135,43 @@ class FalAIProvider(BaseVideoProvider):
         }
 
 
+class UniversalVideoProvider(BaseVideoProvider):
+    name = "Universal Video API (Fal.ai)"
+
+    def generate_video(self, prompt: str, duration: int, visual_style: str = "realistic") -> Dict[str, Any]:
+        fal_key = os.getenv("FAL_KEY")
+        if fal_key:
+            try:
+                import httpx
+                r = httpx.post(
+                    "https://queue.fal.run/fal-ai/luma-dream-machine",
+                    headers={
+                        "Authorization": f"Key {fal_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "prompt": prompt,
+                        "aspect_ratio": "9:16",
+                        "expand_prompt": True
+                    },
+                    timeout=10.0
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    return {
+                        "video_url": data.get("video", {}).get("url"),
+                        "provider": self.name,
+                        "job_id": data.get("request_id")
+                    }
+            except Exception as e:
+                print(f"[-] Universal Fal API call failed: {e}")
+                
+        return {"fallback": True, "provider": self.name}
+
+
 # Registry of available providers
 PROVIDERS = {
+    "universal": UniversalVideoProvider(),
     "google": GoogleVeoProvider(),
     "runway": RunwayProvider(),
     "luma": LumaProvider(),
@@ -147,7 +182,7 @@ PROVIDERS = {
     "fal": FalAIProvider()
 }
 
-_selected_provider = "google"
+_selected_provider = "universal"
 
 def get_selected_provider_key() -> str:
     return _selected_provider

@@ -237,6 +237,7 @@ async def create_video_project(brand_name: str, user_id: str, platform: str, dur
         "created_at": datetime.utcnow().isoformat()
     })
     
+    project_doc.pop("_id", None)
     return project_doc
 
 
