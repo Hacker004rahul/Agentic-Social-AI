@@ -19,3 +19,9 @@ frontend/dist/
 .DS_Store
 .vscode/
 .idea/
+
+
+# Local binaries and logs
+backend/ngrok_bin/
+backend/tunnel_info.log
+tunnel_info.log

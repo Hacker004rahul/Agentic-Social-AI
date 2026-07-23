@@ -331,6 +331,88 @@ async def _publish_buffer(creds: dict, content: str) -> dict:
                 data=payload,
                 headers={"Authorization": f"Bearer {token}"}
             )
+            
+            is_public_api_token = False
+            if r.status_code == 401:
+                try:
+                    err_data = r.json()
+                    if "Public API tokens are not accepted" in err_data.get("error", ""):
+                        is_public_api_token = True
+                except Exception:
+                    pass
+
+            if is_public_api_token:
+                # Use the new Buffer GraphQL API
+                gql_url = "https://api.buffer.com"
+                gql_headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                }
+                
+                # 1. Get organizations
+                org_query = {"query": "query { account { organizations { id } } }"}
+                org_r = await client.post(gql_url, json=org_query, headers=gql_headers)
+                if org_r.status_code != 200:
+                    return {"status": "failed", "response": f"Buffer GraphQL Org check failed: {org_r.text[:200]}"}
+                
+                orgs = org_r.json().get("data", {}).get("account", {}).get("organizations", [])
+                if not orgs:
+                    return {"status": "failed", "response": "Buffer organization not found"}
+                org_id = orgs[0]["id"]
+                
+                # 2. Get channels
+                chan_query = {"query": f'query {{ channels(input: {{ organizationId: "{org_id}" }}) {{ id name service }} }}'}
+                chan_r = await client.post(gql_url, json=chan_query, headers=gql_headers)
+                if chan_r.status_code != 200:
+                    return {"status": "failed", "response": f"Buffer GraphQL Channels fetch failed: {chan_r.text[:200]}"}
+                
+                channels = chan_r.json().get("data", {}).get("channels", [])
+                if not channels:
+                    return {"status": "failed", "response": "No active channels found in your Buffer account"}
+                
+                # 3. Publish to each channel
+                posted_ids = []
+                errors = []
+                for channel in channels:
+                    chan_id = channel["id"]
+                    mutation = {
+                        "query": """
+                            mutation CreatePost($text: String!, $channelId: String!) {
+                              createPost(input: { text: $text, channelId: $channelId, mode: shareNow, schedulingType: automatic }) {
+                                ... on PostActionSuccess {
+                                  post {
+                                    id
+                                  }
+                                }
+                                ... on MutationError {
+                                  message
+                                }
+                              }
+                            }
+                        """,
+                        "variables": {
+                            "text": content,
+                            "channelId": chan_id
+                        }
+                    }
+                    post_r = await client.post(gql_url, json=mutation, headers=gql_headers)
+                    if post_r.status_code == 200:
+                        post_res = post_r.json().get("data", {}).get("createPost", {})
+                        if "post" in post_res and post_res["post"]:
+                            posted_ids.append(post_res["post"]["id"])
+                        elif "message" in post_res:
+                            errors.append(f"{channel.get('name')}: {post_res['message']}")
+                    else:
+                        errors.append(f"{channel.get('name')}: HTTP {post_r.status_code}")
+                
+                if posted_ids:
+                    resp_msg = f"Published live to Buffer via GraphQL (posts: {len(posted_ids)}) ✅"
+                    if errors:
+                        resp_msg += f" (Errors: {', '.join(errors)})"
+                    return {"status": "published", "response": resp_msg}
+                else:
+                    return {"status": "failed", "response": f"Failed to post to Buffer: {', '.join(errors)}"}
+            
             if r.status_code == 200:
                 data = r.json()
                 return {"status": "published", "response": f"Dispatched to Buffer queue (updates: {len(data.get('updates', []))}) ✅"}

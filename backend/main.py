@@ -1,5 +1,6 @@
 import sys
 import io
+from pathlib import Path
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     try:
@@ -11,19 +12,22 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import connect_db, close_db
-from routers import auth, agents, scheduler, analytics, brands, video
+from routers import auth, agents, scheduler, analytics, brands
 from routers import social
 from routers import oauth
 
 from fastapi.staticfiles import StaticFiles
-import os
 
 app = FastAPI(title="Agentic Social AI", version="4.0.0", docs_url="/docs")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-os.makedirs("static/uploads", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+UPLOADS_DIR = STATIC_DIR / "uploads"
+
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 app.include_router(auth.router)
 app.include_router(agents.router)
@@ -32,7 +36,6 @@ app.include_router(analytics.router)
 app.include_router(brands.router)
 app.include_router(social.router)
 app.include_router(oauth.router)
-app.include_router(video.router)
 
 @app.on_event("startup")
 async def startup():

@@ -39,7 +39,10 @@ def _encrypt(text: str) -> str:
     return _fernet().encrypt(text.encode()).decode()
 
 def _redirect_uri(platform: str) -> str:
-    base = settings.OAUTH_REDIRECT_BASE
+    from dotenv import load_dotenv
+    from pathlib import Path
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
+    base = os.getenv("OAUTH_REDIRECT_BASE") or settings.OAUTH_REDIRECT_BASE
     if "localhost" in base:
         base = base.replace("localhost", "127.0.0.1")
     return f"{base}/social/oauth/{platform}/callback"
@@ -234,17 +237,18 @@ async def manual_connect(
 @router.get("/linkedin/start")
 async def linkedin_start(user_id: str):
     client_id = os.getenv("LINKEDIN_CLIENT_ID") or settings.LINKEDIN_CLIENT_ID
-    if not client_id:
-        return _missing_creds_html("LinkedIn", "LINKEDIN_CLIENT_ID", user_id)
-    state  = _make_state(user_id)
-    params = urllib.parse.urlencode({
-        "response_type": "code",
-        "client_id":     client_id,
-        "redirect_uri":  _redirect_uri("linkedin"),
-        "state":         state,
-        "scope":         "openid profile w_member_social",
-    })
-    return RedirectResponse(f"https://www.linkedin.com/oauth/v2/authorization?{params}")
+    live_url = None
+    if client_id:
+        state  = _make_state(user_id)
+        params = urllib.parse.urlencode({
+            "response_type": "code",
+            "client_id":     client_id,
+            "redirect_uri":  _redirect_uri("linkedin"),
+            "state":         state,
+            "scope":         "openid profile w_member_social",
+        })
+        live_url = f"https://www.linkedin.com/oauth/v2/authorization?{params}"
+    return _missing_creds_html("LinkedIn", "LINKEDIN_CLIENT_ID", user_id, live_url=live_url)
 
 
 @router.get("/linkedin/callback")
@@ -279,8 +283,17 @@ async def linkedin_callback(code: str = None, state: str = None, error: str = No
             "https://api.linkedin.com/v2/me",
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        me_data    = me.json()
-        person_urn = f"urn:li:person:{me_data.get('id', '')}"
+        me_data   = me.json()
+        person_id = me_data.get("id")
+        if not person_id:
+            # Fallback to Userinfo (OIDC) endpoint
+            userinfo = await client.get(
+                "https://api.linkedin.com/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            ui_data = userinfo.json()
+            person_id = ui_data.get("sub")
+        person_urn = f"urn:li:person:{person_id or ''}"
 
     await _save_creds(user_id, "LinkedIn", {
         "access_token": access_token,
@@ -295,17 +308,18 @@ async def linkedin_callback(code: str = None, state: str = None, error: str = No
 @router.get("/facebook/start")
 async def facebook_start(user_id: str):
     client_id = os.getenv("META_CLIENT_ID") or settings.META_CLIENT_ID
-    if not client_id:
-        return _missing_creds_html("Facebook", "META_CLIENT_ID", user_id)
-    state  = _make_state(user_id)
-    params = urllib.parse.urlencode({
-        "client_id":     client_id,
-        "redirect_uri":  _redirect_uri("facebook"),
-        "state":         state,
-        "scope":         "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
-        "response_type": "code",
-    })
-    return RedirectResponse(f"https://www.facebook.com/v19.0/dialog/oauth?{params}")
+    live_url = None
+    if client_id:
+        state  = _make_state(user_id)
+        params = urllib.parse.urlencode({
+            "client_id":     client_id,
+            "redirect_uri":  _redirect_uri("facebook"),
+            "state":         state,
+            "scope":         "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
+            "response_type": "code",
+        })
+        live_url = f"https://www.facebook.com/v19.0/dialog/oauth?{params}"
+    return _missing_creds_html("Facebook", "META_CLIENT_ID", user_id, live_url=live_url)
 
 
 @router.get("/facebook/callback")
@@ -384,32 +398,33 @@ async def facebook_callback(code: str = None, state: str = None, error: str = No
 @router.get("/x/start")
 async def x_start(user_id: str):
     client_id = os.getenv("X_CLIENT_ID") or settings.X_CLIENT_ID
-    if not client_id:
-        return _missing_creds_html("Twitter", "X_CLIENT_ID", user_id)
-    state         = _make_state(user_id)
-    code_verifier = secrets.token_urlsafe(64)
-    code_challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(code_verifier.encode()).digest()
-    ).rstrip(b"=").decode()
+    live_url = None
+    if client_id:
+        state         = _make_state(user_id)
+        code_verifier = secrets.token_urlsafe(64)
+        code_challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(code_verifier.encode()).digest()
+        ).rstrip(b"=").decode()
 
-    # Store verifier in DB temporarily keyed by state
-    db = get_db()
-    await db["oauth_state"].update_one(
-        {"state": state},
-        {"$set": {"state": state, "code_verifier": code_verifier, "created_at": datetime.utcnow().isoformat()}},
-        upsert=True,
-    )
+        # Store verifier in DB temporarily keyed by state
+        db = get_db()
+        await db["oauth_state"].update_one(
+            {"state": state},
+            {"$set": {"state": state, "code_verifier": code_verifier, "created_at": datetime.utcnow().isoformat()}},
+            upsert=True,
+        )
 
-    params = urllib.parse.urlencode({
-        "response_type":         "code",
-        "client_id":             client_id,
-        "redirect_uri":          _redirect_uri("x"),
-        "scope":                 "tweet.read tweet.write users.read offline.access",
-        "state":                 state,
-        "code_challenge":        code_challenge,
-        "code_challenge_method": "S256",
-    })
-    return RedirectResponse(f"https://twitter.com/i/oauth2/authorize?{params}")
+        params = urllib.parse.urlencode({
+            "response_type":         "code",
+            "client_id":             client_id,
+            "redirect_uri":          _redirect_uri("x"),
+            "scope":                 "tweet.read tweet.write users.read offline.access",
+            "state":                 state,
+            "code_challenge":        code_challenge,
+            "code_challenge_method": "S256",
+        })
+        live_url = f"https://twitter.com/i/oauth2/authorize?{params}"
+    return _missing_creds_html("Twitter", "X_CLIENT_ID", user_id, live_url=live_url)
 
 
 @router.get("/x/callback")
@@ -519,4 +534,82 @@ async def youtube_callback(code: str = None, state: str = None, error: str = Non
 
 @router.get("/buffer/start")
 async def buffer_start(user_id: str):
-    return _missing_creds_html("Buffer", "BUFFER_CLIENT_ID", user_id)
+    client_id = os.getenv("BUFFER_CLIENT_ID") or settings.BUFFER_CLIENT_ID
+    live_url = None
+    if client_id:
+        state          = _make_state(user_id)
+        code_verifier  = secrets.token_urlsafe(64)
+        code_challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(code_verifier.encode()).digest()
+        ).rstrip(b"=").decode()
+
+        # Store verifier in DB temporarily keyed by state
+        db = get_db()
+        await db["oauth_state"].update_one(
+            {"state": state},
+            {"$set": {"state": state, "code_verifier": code_verifier, "created_at": datetime.utcnow().isoformat()}},
+            upsert=True,
+        )
+
+        params = urllib.parse.urlencode({
+            "client_id":             client_id,
+            "redirect_uri":          _redirect_uri("buffer"),
+            "response_type":         "code",
+            "state":                 state,
+            "code_challenge":        code_challenge,
+            "code_challenge_method": "S256",
+        })
+        live_url = f"https://bufferapp.com/oauth2/authorize?{params}"
+    return _missing_creds_html("Buffer", "BUFFER_CLIENT_ID", user_id, live_url=live_url)
+
+
+@router.get("/buffer/callback")
+async def buffer_callback(code: str = None, state: str = None, error: str = None):
+    if error or not code:
+        return _close_popup("error", "Buffer", error or "No code returned")
+
+    data    = _parse_state(state)
+    user_id = data["user_id"]
+
+    db       = get_db()
+    state_doc = await db["oauth_state"].find_one({"state": state})
+    if not state_doc:
+        return _close_popup("error", "Buffer", "State not found — try again")
+    code_verifier = state_doc["code_verifier"]
+    await db["oauth_state"].delete_one({"state": state})
+
+    async with httpx.AsyncClient() as client:
+        # Exchange code for token using PKCE
+        r = await client.post(
+            "https://auth.buffer.com/token",
+            data={
+                "client_id":     settings.BUFFER_CLIENT_ID,
+                "redirect_uri":  _redirect_uri("buffer"),
+                "code":          code,
+                "code_verifier": code_verifier,
+                "grant_type":    "authorization_code",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        token_data = r.json()
+        if "access_token" not in token_data:
+            return _close_popup("error", "Buffer", str(token_data))
+
+        access_token = token_data["access_token"]
+
+        # Fetch profile IDs
+        prof_r = await client.get(
+            "https://api.bufferapp.com/1/profiles.json",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        profiles = prof_r.json()
+        if isinstance(profiles, list):
+            profile_ids = ",".join([p["id"] for p in profiles if "id" in p])
+        else:
+            profile_ids = "me"
+
+    await _save_creds(user_id, "Buffer", {
+        "access_token": access_token,
+        "profile_ids":   profile_ids,
+    })
+    return _close_popup("success", "Buffer")

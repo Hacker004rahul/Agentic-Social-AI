@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     META_CLIENT_SECRET:     str = ""
     GOOGLE_CLIENT_ID:       str = ""
     GOOGLE_CLIENT_SECRET:   str = ""
+    BUFFER_CLIENT_ID:       str = ""
+    BUFFER_CLIENT_SECRET:   str = ""
     OAUTH_REDIRECT_BASE:    str = "http://localhost:8000"
 
 settings = Settings()
