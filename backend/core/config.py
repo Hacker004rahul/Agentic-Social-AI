@@ -47,6 +47,12 @@ class _DeleteResult:
         self.deleted_count = deleted_count
 
 
+class _UpdateResult:
+    def __init__(self, matched_count: int, modified_count: int):
+        self.matched_count = matched_count
+        self.modified_count = modified_count
+
+
 class LocalCursor(list):
     def sort(self, key: str, direction: int = 1):
         reverse = direction == -1
@@ -98,17 +104,21 @@ class LocalCollection:
     async def update_one(self, query: dict, update: dict, upsert: bool = False):
         with _lock:
             docs  = self._read()
-            found = False
+            found = 0
+            modified = 0
             for doc in docs:
                 if self._matches(doc, query):
                     doc.update(update.get("$set", {}))
-                    found = True
+                    found = 1
+                    modified = 1
                     break
             if not found and upsert:
                 new_doc = {**query, **update.get("$set", {})}
                 new_doc.setdefault("_id", f"local-{int(time.time()*1000)}-{uuid.uuid4().hex[:8]}")
                 docs.append(new_doc)
+                modified = 1
             self._write(docs)
+            return _UpdateResult(found, modified)
 
     async def delete_one(self, query: dict):
         with _lock:

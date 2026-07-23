@@ -12,33 +12,9 @@ from services.video_providers import get_selected_provider
 os.makedirs("static/uploads", exist_ok=True)
 os.makedirs("static/templates", exist_ok=True)
 
-# ── Fallback Video Helper ──────────────────────────────────
-# Downloads a royalty-free vertical stock video sample to act as fallback
 async def download_fallback_video(duration: int) -> str:
-    filename = f"fallback_{duration}s.mp4"
-    filepath = os.path.join("static", "templates", filename)
-    if os.path.exists(filepath):
-        return f"/static/templates/{filename}"
-
-    # Sample vertical stock video URLs
-    url_map = {
-        10: "https://assets.mixkit.co/videos/preview/mixkit-star-ry-night-sky-over-a-forest-44390-large.mp4",
-        30: "https://assets.mixkit.co/videos/preview/mixkit-star-ry-night-sky-over-a-forest-44390-large.mp4",
-        60: "https://assets.mixkit.co/videos/preview/mixkit-star-ry-night-sky-over-a-forest-44390-large.mp4"
-    }
-    url = url_map.get(duration, url_map[30])
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            r = await client.get(url)
-            if r.status_code == 200:
-                with open(filepath, "wb") as f:
-                    f.write(r.content)
-                return f"/static/templates/{filename}"
-    except Exception as e:
-        print(f"[-] Video download failed: {e}")
-    
-    # Absolute fallback (create empty file or return mock path)
-    return "/static/templates/fallback.mp4"
+    # Instantly return high quality vertical stock video CDN URL to bypass blocking download times
+    return "https://assets.mixkit.co/videos/preview/mixkit-star-ry-night-sky-over-a-forest-44390-large.mp4"
 
 
 # ── Storyboard Generator ───────────────────────────────────

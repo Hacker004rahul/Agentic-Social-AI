@@ -5,6 +5,12 @@ export default function VideoStudioPanel() {
   const [activeTab, setActiveTab] = useState('generator') // 'generator', 'queue', 'analytics'
   const [toast, setToast] = useState(null)
 
+  const resolveUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `http://localhost:8000${url}`;
+  };
+
   // Form inputs
   const [brandName, setBrandName] = useState('')
   const [content, setContent] = useState('')
@@ -351,7 +357,7 @@ export default function VideoStudioPanel() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', background: '#000', position: 'relative', height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <video 
-                        src={`http://localhost:8000${project.video_url}`} 
+                        src={resolveUrl(project.video_url)} 
                         controls 
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -359,7 +365,7 @@ export default function VideoStudioPanel() {
                     {assets.voice_over_url && (
                       <div style={{ background: 'var(--surface)', padding: 10, borderRadius: 8, border: '1px solid var(--border)' }}>
                         <div style={{ fontSize: '0.74rem', fontWeight: 700, marginBottom: 4, color: 'var(--text-secondary)' }}>🗣️ TTS Audio Narration</div>
-                        <audio src={`http://localhost:8000${assets.voice_over_url}`} controls style={{ width: '100%', height: 28 }} />
+                        <audio src={resolveUrl(assets.voice_over_url)} controls style={{ width: '100%', height: 28 }} />
                       </div>
                     )}
                   </div>
@@ -426,7 +432,7 @@ export default function VideoStudioPanel() {
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '12px 8px' }}>
                         <div style={{ width: 44, height: 64, borderRadius: 6, overflow: 'hidden', background: '#000' }}>
-                          <video src={`http://localhost:8000${item.video_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <video src={resolveUrl(item.video_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       </td>
                       <td style={{ padding: '12px 8px' }}>
